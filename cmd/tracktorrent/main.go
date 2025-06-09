@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	fmt.Println("We Building Torrent!")
+	args := os.Args
+	fmt.Printf("Torrent files given: %v\n", args[1:])
 }
