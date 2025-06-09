@@ -12,5 +12,5 @@ func main() {
 
 	torrFile := parser.ParseTorrentFile(args[1])
 
-	fmt.Printf("%+v\n", torrFile)
+	fmt.Printf("%x\n", torrFile.CalcInfoHash())
 }
