@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/jackpal/bencode-go"
@@ -72,4 +73,12 @@ func (tf *TorrentFile) GetPiecesAsArray() ([][]byte, error) {
 	}
 
 	return pieces, nil
+}
+
+type TrackerResponse struct {
+	Interval int    `bencode:"interval"`
+	Peers    string `bencode:"peers"`
+}
+
+func DecodeTrackerResponse(body *io.Reader) (TrackerResponse, error) {
 }
