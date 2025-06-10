@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"tracktorrent/internal/downloader"
@@ -21,5 +22,10 @@ func main() {
 		panic(err.Error())
 	}
 
-	fmt.Printf("%s\n", torrdwnldr.TrackerResponse.Peers)
+	b, err := json.MarshalIndent(torrdwnldr, "", "  ")
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println(string(b))
+
 }
