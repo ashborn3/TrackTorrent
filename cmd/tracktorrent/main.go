@@ -10,7 +10,16 @@ func main() {
 	args := os.Args
 	fmt.Printf("Torrent files given: %v\n", args[1:])
 
-	torrFile := parser.ParseTorrentFile(args[1])
+	torrFile, err := parser.NewTorrentFile(args[1])
+	if err != nil {
+		panic(err.Error())
+	}
 
-	fmt.Printf("%x\n", torrFile.CalcInfoHash())
+	// shahash, _ := torrFile.CalcInfoHash()
+
+	mapie, err := torrFile.GetPiecesAsHexArray()
+
+	for idx, val := range mapie {
+		fmt.Printf("%d: %s\n", idx, val)
+	}
 }

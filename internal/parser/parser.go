@@ -3,6 +3,7 @@ package parser
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -34,29 +35,42 @@ type File struct {
 	Path   []string `bencode:"path"` // Path is an array of directories + filename
 }
 
-func ParseTorrentFile(pathtofile string) TorrentFile {
+func NewTorrentFile(pathtofile string) (*TorrentFile, error) {
 	var torrFile TorrentFile
 	fData, err := os.ReadFile(pathtofile)
 	if err != nil {
-		panic(fmt.Sprintf("Error reading given file: %s", err.Error()))
+		return nil, fmt.Errorf("error reading torrent file: %v", err.Error())
 	}
 	err = bencode.Unmarshal(bytes.NewReader(fData), &torrFile)
 	if err != nil {
-		panic("Error unmarshalling bencode file into struct")
+		return nil, fmt.Errorf("error unmarshalling torrent file: %v", err.Error())
 	}
 
-	return torrFile
+	return &torrFile, nil
 }
 
-func (tf TorrentFile) CalcInfoHash() []byte {
+func (tf *TorrentFile) CalcInfoHash() ([]byte, error) {
 	var buf bytes.Buffer
 	err := bencode.Marshal(&buf, tf.Info)
 	if err != nil {
-		panic("Error calculating info hash, shouldn't have happened!")
+		return nil, fmt.Errorf("error bencode marshalling Info struct, shouldn't have happened")
 	}
 
 	hasher := sha1.New()
 	hasher.Write(buf.Bytes())
 
-	return hasher.Sum(nil)
+	return hasher.Sum(nil), nil
+}
+
+func (tf *TorrentFile) GetPiecesAsHexArray() ([]string, error) {
+	numPieces := (len(tf.Info.Pieces) + 19) / 20 // round up division
+	pieces := make([]string, numPieces)
+	j := 0
+	pieceLength := 20 // SHA-1 hash length
+	for i := 0; i < len(tf.Info.Pieces); i += pieceLength {
+		pieces[j] = hex.EncodeToString([]byte(tf.Info.Pieces[i : i+pieceLength]))
+		j = j + 1
+	}
+
+	return pieces, nil
 }
