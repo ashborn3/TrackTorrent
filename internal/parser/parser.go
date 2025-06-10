@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/jackpal/bencode-go"
@@ -80,9 +79,9 @@ type TrackerResponse struct {
 	Peers    string `bencode:"peers"`
 }
 
-func DecodeTrackerResponse(body *io.Reader) (*TrackerResponse, error) {
+func DecodeTrackerResponse(body *bytes.Buffer) (*TrackerResponse, error) {
 	var trkrRsp TrackerResponse
-	err := bencode.Unmarshal(*body, trkrRsp)
+	err := bencode.Unmarshal(body, &trkrRsp)
 	if err != nil {
 		return nil, err
 	}
