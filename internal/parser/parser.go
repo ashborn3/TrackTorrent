@@ -76,7 +76,7 @@ func (tf *TorrentFile) GetPiecesAsArray() ([][]byte, error) {
 
 type TrackerResponse struct {
 	Interval int    `bencode:"interval"`
-	Peers    string `bencode:"peers"`
+	Peers    []byte `bencode:"peers"`
 }
 
 func DecodeTrackerResponse(body *bytes.Buffer) (*TrackerResponse, error) {
