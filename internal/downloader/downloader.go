@@ -1,7 +1,9 @@
 package downloader
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,15 +13,16 @@ import (
 )
 
 type TorrentDownloader struct {
-	PeerId      string
-	TorrentFile *parser.TorrentFile
-	PieceHashes [][]byte
-	Pieces      [][]byte
-	Peers       []string
-	Uploaded    int
-	Downloaded  int
-	Left        int
-	Compact     int
+	PeerId          string
+	TorrentFile     *parser.TorrentFile
+	TrackerResponse *parser.TrackerResponse
+	PieceHashes     [][]byte
+	Pieces          [][]byte
+	Peers           []string
+	Uploaded        int
+	Downloaded      int
+	Left            int
+	Compact         int
 }
 
 func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) {
@@ -65,6 +68,16 @@ func (td *TorrentDownloader) requestPeerList() error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(bodyBytes)
+	td.TrackerResponse, err = parser.DecodeTrackerResponse(buf)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
