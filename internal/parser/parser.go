@@ -3,7 +3,6 @@ package parser
 import (
 	"bytes"
 	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -62,13 +61,13 @@ func (tf *TorrentFile) CalcInfoHash() ([]byte, error) {
 	return hasher.Sum(nil), nil
 }
 
-func (tf *TorrentFile) GetPiecesAsHexArray() ([]string, error) {
+func (tf *TorrentFile) GetPiecesAsArray() ([][]byte, error) {
 	numPieces := (len(tf.Info.Pieces) + 19) / 20 // round up division
-	pieces := make([]string, numPieces)
+	pieces := make([][]byte, numPieces)
 	j := 0
 	pieceLength := 20 // SHA-1 hash length
 	for i := 0; i < len(tf.Info.Pieces); i += pieceLength {
-		pieces[j] = hex.EncodeToString([]byte(tf.Info.Pieces[i : i+pieceLength]))
+		pieces[j] = []byte(tf.Info.Pieces[i : i+pieceLength])
 		j = j + 1
 	}
 
