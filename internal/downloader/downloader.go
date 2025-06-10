@@ -21,7 +21,7 @@ type TorrentDownloader struct {
 	Peers           []string
 	Uploaded        int
 	Downloaded      int
-	Left            int
+	Left            int64
 	Compact         int
 }
 
@@ -29,6 +29,9 @@ func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) 
 	torrdwnldr := TorrentDownloader{
 		TorrentFile: torrentfile,
 		PeerId:      random.RandStringBytes(20),
+		Uploaded:    0,
+		Downloaded:  0,
+		Left:        torrentfile.Info.Length,
 	}
 	var err error
 	torrdwnldr.PieceHashes, err = torrdwnldr.TorrentFile.GetPiecesAsArray()
@@ -51,17 +54,20 @@ func (td *TorrentDownloader) requestPeerList() error {
 	if err != nil {
 		return err
 	}
+	encodedInfoHash := ""
+	for _, b := range infoHash {
+		encodedInfoHash += fmt.Sprintf("%%%02x", b)
+	}
 
 	getParams := url.Values{}
-	getParams.Add("info_hash", string(infoHash))
 	getParams.Add("peer_id", td.PeerId)
 	getParams.Add("port", strconv.Itoa(config.PORT))
 	getParams.Add("uploaded", strconv.Itoa(td.Uploaded))
 	getParams.Add("downloaded", strconv.Itoa(td.Downloaded))
-	getParams.Add("left", strconv.Itoa(td.Left))
+	getParams.Add("left", strconv.FormatInt(td.Left, 10))
 	getParams.Add("compact", strconv.Itoa(td.Compact))
 
-	finalUrl := fmt.Sprintf("%s?%s", baseUrl, getParams.Encode())
+	finalUrl := fmt.Sprintf("%s?info_hash=%s&%s", baseUrl, encodedInfoHash, getParams.Encode())
 
 	resp, err := http.Get(finalUrl)
 	if err != nil {
