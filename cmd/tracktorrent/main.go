@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"tracktorrent/internal/downloader"
 	"tracktorrent/internal/parser"
 )
 
@@ -15,11 +16,10 @@ func main() {
 		panic(err.Error())
 	}
 
-	// shahash, _ := torrFile.CalcInfoHash()
-
-	mapie, err := torrFile.GetPiecesAsHexArray()
-
-	for idx, val := range mapie {
-		fmt.Printf("%d: %s\n", idx, val)
+	torrdwnldr, err := downloader.NewDownloader(torrFile)
+	if err != nil {
+		panic(err.Error())
 	}
+
+	fmt.Printf("%s\n", torrdwnldr.TrackerResponse.Peers)
 }
