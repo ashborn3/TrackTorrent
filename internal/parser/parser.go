@@ -80,5 +80,11 @@ type TrackerResponse struct {
 	Peers    string `bencode:"peers"`
 }
 
-func DecodeTrackerResponse(body *io.Reader) (TrackerResponse, error) {
+func DecodeTrackerResponse(body *io.Reader) (*TrackerResponse, error) {
+	var trkrRsp TrackerResponse
+	err := bencode.Unmarshal(*body, trkrRsp)
+	if err != nil {
+		return nil, err
+	}
+	return &trkrRsp, err
 }
