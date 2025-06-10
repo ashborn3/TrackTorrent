@@ -1,3 +1,3 @@
 package config
 
-const PORT = 1234
+const PORT = 6881
