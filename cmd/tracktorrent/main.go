@@ -27,4 +27,9 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(b))
+
+	for idx, val := range torrdwnldr.Conns {
+		fmt.Printf("idx: %d\n", idx)
+		fmt.Printf("conn ptr: %p\n", val.Conn)
+	}
 }
