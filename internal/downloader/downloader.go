@@ -17,7 +17,7 @@ type TorrentDownloader struct {
 	PeerId          string
 	TorrentFile     *parser.TorrentFile
 	TrackerResponse *parser.TrackerResponse
-	Handshakes      []*Handshake
+	Conns           []*Conn
 	PieceHashes     [][]byte
 	Pieces          [][]byte
 	Peers           []string
@@ -27,11 +27,13 @@ type TorrentDownloader struct {
 	Compact         int
 }
 
-type Handshake struct {
+type Conn struct {
 	ProtocolLength int
 	Protocol       string
 	InfoHash       []byte
 	PeerId         []byte
+	Conn           *net.Conn
+	Alive          bool
 }
 
 func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) {
@@ -53,7 +55,7 @@ func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) 
 		return nil, err
 	}
 
-	torrdwnldr.Handshakes = make([]*Handshake, len(torrdwnldr.TrackerResponse.Peers))
+	torrdwnldr.Conns = make([]*Conn, len(torrdwnldr.TrackerResponse.Peers))
 
 	return &torrdwnldr, nil
 }
@@ -99,7 +101,7 @@ func (td *TorrentDownloader) requestPeerList() error {
 	return nil
 }
 
-func (td *TorrentDownloader) HandShakeWithPeer(peeridx int) error {
+func (td *TorrentDownloader) handShakeWithPeer(peeridx int) error {
 	peer := td.TrackerResponse.Peers[peeridx]
 
 	conn, err := net.Dial("tcp", net.JoinHostPort(peer.Ip, strconv.Itoa(peer.Port)))
@@ -134,18 +136,20 @@ func (td *TorrentDownloader) HandShakeWithPeer(peeridx int) error {
 		return err
 	}
 
-	hdskStruct := Handshake{
+	connStruct := Conn{
 		ProtocolLength: int(resp[0]),
 		Protocol:       string(resp[1 : 1+int(resp[0])]),
 		InfoHash:       resp[1+int(resp[0])+8 : 1+int(resp[0])+8+20],
 		PeerId:         resp[1+int(resp[0])+8+20:],
+		Conn:           &conn,
+		Alive:          true,
 	}
 
-	if !bytes.Equal(hdskStruct.InfoHash, infohash[:]) {
+	if !bytes.Equal(connStruct.InfoHash, infohash[:]) {
 		return fmt.Errorf("mismatched infohash in handshake")
 	}
 
-	td.Handshakes[peeridx] = &hdskStruct
+	td.Conns[peeridx] = &connStruct
 
 	return nil
 }
