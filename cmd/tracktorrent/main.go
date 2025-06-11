@@ -22,11 +22,6 @@ func main() {
 		panic(err.Error())
 	}
 
-	err = torrdwnldr.HandShakeWithPeer(0)
-	if err != nil {
-		panic(err)
-	}
-
 	b, err := json.MarshalIndent(torrdwnldr, "", "  ")
 	if err != nil {
 		panic(err)

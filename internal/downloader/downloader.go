@@ -57,6 +57,13 @@ func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) 
 
 	torrdwnldr.Conns = make([]*Conn, len(torrdwnldr.TrackerResponse.Peers))
 
+	for idx := range len(torrdwnldr.TrackerResponse.Peers) {
+		err = torrdwnldr.handShakeWithPeer(idx)
+		if err != nil {
+			torrdwnldr.Conns[idx] = nil
+		}
+	}
+
 	return &torrdwnldr, nil
 }
 
