@@ -32,7 +32,7 @@ type Conn struct {
 	Protocol       string
 	InfoHash       []byte
 	PeerId         []byte
-	Conn           *net.Conn
+	Conn           net.Conn
 	Alive          bool
 }
 
@@ -148,7 +148,7 @@ func (td *TorrentDownloader) handShakeWithPeer(peeridx int) error {
 		Protocol:       string(resp[1 : 1+int(resp[0])]),
 		InfoHash:       resp[1+int(resp[0])+8 : 1+int(resp[0])+8+20],
 		PeerId:         resp[1+int(resp[0])+8+20:],
-		Conn:           &conn,
+		Conn:           conn,
 		Alive:          true,
 	}
 
