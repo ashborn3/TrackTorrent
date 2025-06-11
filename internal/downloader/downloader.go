@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,6 +17,7 @@ type TorrentDownloader struct {
 	PeerId          string
 	TorrentFile     *parser.TorrentFile
 	TrackerResponse *parser.TrackerResponse
+	Handshakes      []*Handshake
 	PieceHashes     [][]byte
 	Pieces          [][]byte
 	Peers           []string
@@ -23,6 +25,13 @@ type TorrentDownloader struct {
 	Downloaded      int
 	Left            int64
 	Compact         int
+}
+
+type Handshake struct {
+	ProtocolLength int
+	Protocol       string
+	InfoHash       []byte
+	PeerId         []byte
 }
 
 func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) {
@@ -43,6 +52,8 @@ func NewDownloader(torrentfile *parser.TorrentFile) (*TorrentDownloader, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	torrdwnldr.Handshakes = make([]*Handshake, len(torrdwnldr.TrackerResponse.Peers))
 
 	return &torrdwnldr, nil
 }
@@ -84,6 +95,57 @@ func (td *TorrentDownloader) requestPeerList() error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (td *TorrentDownloader) HandShakeWithPeer(peeridx int) error {
+	peer := td.TrackerResponse.Peers[peeridx]
+
+	conn, err := net.Dial("tcp", net.JoinHostPort(peer.Ip, strconv.Itoa(peer.Port)))
+	if err != nil {
+		return err
+	}
+
+	infohash, err := td.TorrentFile.CalcInfoHash()
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+
+	pstr := "BitTorrent protocol"
+	buf.WriteByte(byte(len(pstr))) // 1 byte
+	buf.WriteString(pstr)          // 19 bytes
+	buf.Write(make([]byte, 8))     // 8 bytes
+	buf.Write(infohash[:])         // 20 bytes
+	buf.Write([]byte(td.PeerId))   // 20 bytes
+
+	handshake := buf.Bytes()
+
+	_, err = conn.Write([]byte(handshake))
+	if err != nil {
+		return err
+	}
+
+	resp := make([]byte, 68)
+	_, err = io.ReadFull(conn, resp) // ensures all 68 bytes are read
+	if err != nil {
+		return err
+	}
+
+	hdskStruct := Handshake{
+		ProtocolLength: int(resp[0]),
+		Protocol:       string(resp[1 : 1+int(resp[0])]),
+		InfoHash:       resp[1+int(resp[0])+8 : 1+int(resp[0])+8+20],
+		PeerId:         resp[1+int(resp[0])+8+20:],
+	}
+
+	if !bytes.Equal(hdskStruct.InfoHash, infohash[:]) {
+		return fmt.Errorf("mismatched infohash in handshake")
+	}
+
+	td.Handshakes[peeridx] = &hdskStruct
 
 	return nil
 }
